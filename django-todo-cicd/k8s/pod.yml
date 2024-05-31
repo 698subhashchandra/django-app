@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: todo-app
-    image: 698subhashchandra/django-todo:latest
+    image: https://129390742221.dkr.ecr.us-west-2.amazonaws.com:latest
     ports:
     - containerPort: 8000
 
