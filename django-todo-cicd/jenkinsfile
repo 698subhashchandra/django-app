@@ -1,10 +1,13 @@
 pipeline {
   agent any
-     tools {
-    // Use Python tool installation
-    jenkins.plugins.shiningpanda.tools.PythonInstallation 'Python3'
-    // Make sure to replace 'Python3' with the name of the Python tool installation configured in Jenkins
-  }
+      stage('Build') {
+      steps {
+        // Use the 'tool' step to specify Python tool installation
+        tool name: 'Python3', type: 'jenkins.plugins.shiningpanda.tools.PythonInstallation'
+
+        // Now you can use Python commands
+        sh 'python --version'
+      }
    stages{
     stage('CompileandRunSonarAnalysis') {
            steps {
