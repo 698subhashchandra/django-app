@@ -1,0 +1,66 @@
+pipeline {
+  agent any
+   tools {
+    // Use Python tool installation
+    python 'Python3'
+    // You may need to define this tool 'Python3' in your Jenkins global tool configuration
+  }
+   stages{
+    stage('CompileandRunSonarAnalysis') {
+           steps {
+    // Install any necessary dependencies (if not already installed)
+    sh 'pip install -r requirements.txt'
+
+    // Run tests using pytest (assuming you use pytest for testing)
+    sh 'pytest'
+
+    // Run SonarQube analysis using sonar-scanner
+    // Make sure sonar-scanner is installed and configured properly
+    sh 'sonar-scanner \
+        -Dsonar.projectKey=todo-application \
+        -Dsonar.organization=todo-application \
+        -Dsonar.host.url=https://sonarcloud.io \
+        -Dsonar.login=276ca6c11809ad75a0df42da713890a88cfe7816'
+}
+
+    }
+
+	stage('RunSCAAnalysisUsingSnyk') {
+            steps {
+				withCredentials([string(credentialsId: 'SNYK_TOKEN', variable: 'SNYK_TOKEN')]) {
+					sh 'mvn snyk:test -fn'
+				}
+			}
+    }
+
+	stage('Build') {
+            steps {
+               withDockerRegistry([credentialsId: "dockerlogin", url: ""]) {
+                 script{
+                 app = docker.build("asg")
+                 }
+               }
+            }
+    }
+
+	stage('Push') {
+            steps {
+                script{
+                    docker.withRegistry('https://129390742221.dkr.ecr.us-west-2.amazonaws.com', 'ecr:us-west-2:aws-credentials') {
+                    app.push("latest")
+                    }
+                }
+            }
+    	}
+
+	stage('Kubernetes Deployment of ASG Bugg Web Application') {
+	   steps {
+	      withKubeConfig([credentialsId: 'kubelogin']) {
+		  sh('kubectl delete all --all -n devsecops')
+		  sh ('kubectl apply -f deployment.yaml --namespace=devsecops')
+		}
+	      }
+   	}
+
+  }
+}
